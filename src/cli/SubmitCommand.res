@@ -96,6 +96,7 @@ external createSubmissionPlan: (
   'githubConfig,
   array<JJTypes.narrowedBookmarkSegment>,
   string,
+  bool,
   option<'planCallbacks>,
   option<string>,
 ) => promise<submissionPlan> = "createSubmissionPlan"
@@ -118,7 +119,7 @@ external executeSubmissionPlan: (
 external getGitHubConfig: (JJTypes.jjFunctions, string) => promise<'githubConfig> =
   "getGitHubConfig"
 
-type submitOptions = {dryRun?: bool, remote?: string, template?: option<string>}
+type submitOptions = {dryRun?: bool, remote?: string, template?: option<string>, makeDrafts?: bool}
 
 /**
  * Format bookmark status for display
@@ -191,6 +192,7 @@ let runSubmit = async (
   dryRun: bool,
   remote: string,
   template: option<string>,
+  draft: bool,
 ) => {
   // PHASE 1: Analyze the submission graph
   Console.log(`🔍 Analyzing submission requirements for: ${bookmarkName}`)
@@ -208,7 +210,7 @@ let runSubmit = async (
 
   Console.log(`📋 Creating submission plan...`)
   let narrowedSegments = createNarrowedSegments(resolvedBookmarks, analysis)
-  let plan = await createSubmissionPlan(jjFunctions, githubConfig, narrowedSegments, remote, None, template)
+  let plan = await createSubmissionPlan(jjFunctions, githubConfig, narrowedSegments, remote, draft, None, template)
 
   // Display plan summary
   Console.log(`📍 GitHub repository: ${plan.repoInfo.owner}/${plan.repoInfo.repo}`)
@@ -327,6 +329,10 @@ let submitCommand = async (
     }
   | None => None
   }
+  let makeDrafts = switch options {
+  | Some({?makeDrafts}) => makeDrafts->Option.getOr(false)
+  | None => false
+  }
 
   if dryRun {
     Console.log(`🧪 DRY RUN: Simulating submission of bookmark: ${bookmarkName}`)
@@ -356,5 +362,5 @@ let submitCommand = async (
     Console.log() // add space after the message
   }
 
-  await runSubmit(jjFunctions, bookmarkName, changeGraph, dryRun, remote, template)
+  await runSubmit(jjFunctions, bookmarkName, changeGraph, dryRun, remote, template, makeDrafts)
 }

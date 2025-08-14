@@ -61,6 +61,7 @@ export interface SubmissionPlan {
   bookmarksNeedingPR: {
     bookmark: Bookmark;
     baseBranchOptions: string[];
+    draft: boolean;
     prContent: { title: string, body?: string };
   }[];
   bookmarksNeedingPRBaseUpdate: {
@@ -291,6 +292,7 @@ export async function createPR(
   owner: string,
   repo: string,
   bookmarkName: string,
+  draft: boolean,
   baseBranch: string,
   title: string,
   body?: string,
@@ -300,6 +302,7 @@ export async function createPR(
     repo,
     title,
     body,
+    draft,
     head: bookmarkName,
     base: baseBranch,
   });
@@ -510,6 +513,7 @@ export async function createSubmissionPlan(
   githubConfig: GitHubConfig,
   segments: NarrowedBookmarkSegment[],
   remoteName: string,
+  draft: boolean,
   callbacks?: PlanCallbacks,
   template?: string,
 ): Promise<SubmissionPlan> {
@@ -562,6 +566,7 @@ export async function createSubmissionPlan(
             segments,
             defaultBranch,
           ),
+          draft,
           prContent: { title: generatePRTitle(bookmark.name, segments), body },
         });
       }
@@ -665,6 +670,7 @@ export async function executeSubmissionPlan(
       bookmark,
       baseBranchOptions,
       prContent,
+      draft,
     } of plan.bookmarksNeedingPR) {
       try {
         if (baseBranchOptions.length !== 1) {
@@ -684,6 +690,7 @@ export async function executeSubmissionPlan(
           githubConfig.owner,
           githubConfig.repo,
           bookmark.name,
+          draft,
           baseBranchOptions[0],
           prContent.title,
           prContent.body,
